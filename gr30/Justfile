@@ -1,0 +1,45 @@
+set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
+
+# ヘルプ
+@default:
+    @just --list
+
+# サンプルで実行: samples/a.in を標準入力に流す
+run name:
+    @cargo build --quiet --bin {{name}}
+    @in="samples/{{lowercase(name)}}.in"; \
+    if [[ -f "$in" ]]; then \
+        echo "< $in"; ./target/debug/{{name}} < "$in"; \
+    else \
+        echo "samples/{{lowercase(name)}}.in がありません"; exit 1; \
+    fi
+
+# サンプルの入出力を比較（.out があるとき）
+# ※ 無ければ実行だけします
+sample-test name:
+    @cargo build --quiet --bin {{name}}
+    @in="samples/{{lowercase(name)}}.in"; out="samples/{{lowercase(name)}}.out"; \
+    if [[ -f "$in" && -f "$out" ]]; then \
+        echo "diff <(run) vs $out"; \
+        diff -u <(./target/debug/{{name}} < "$in") "$out" && echo OK; \
+    elif [[ -f "$in" ]]; then \
+        echo "< $in"; ./target/debug/{{name}} < "$in"; \
+    else \
+        echo "samples/{{lowercase(name)}}.in がありません"; exit 1; \
+    fi
+
+# 提出用に単一ファイルへバンドル
+pack name:
+    @mkdir -p dist
+    @cargo equip --bin {{name}} --remove docs --minify libs > dist/{{name}}.rs
+    @echo "packed -> dist/{{name}}.rs"
+
+# リリースビルドでの実行（実行時間測定用）
+run-release name:
+    @cargo build --release --quiet --bin {{name}}
+    @in="samples/{{lowercase(name)}}.in"; \
+    if [[ -f "$in" ]]; then \
+        /usr/bin/time -f "time: %E mem: %MKB" ./target/release/{{name}} < "$in"; \
+    else \
+        echo "samples/{{lowercase(name)}}.in がありません"; exit 1; \
+    fi
