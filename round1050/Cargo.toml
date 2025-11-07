@@ -1,0 +1,25 @@
+[package]
+name = "round1050"
+version = "0.1.0"
+edition = "2021" # Codeforces は Rust 1.89 (2021/2024) を選択可
+publish = false
+
+
+[dependencies]
+# Codeforces では外部クレート不可。ここはローカル開発専用（通常は空）。
+
+
+[profile.dev]
+opt-level = 0
+
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+debug = true
+
+
+[workspace]
+members = []
